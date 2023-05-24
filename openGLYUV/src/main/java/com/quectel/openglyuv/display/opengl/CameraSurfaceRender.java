@@ -25,13 +25,16 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
     private final GLSurfaceView mGLSurfaceView;
 
-
     private int width,height;
+    private surfaceListener listener;
 
     public CameraSurfaceRender(GLSurfaceView glSurfaceView,int width,int height) {
         mGLSurfaceView = glSurfaceView;
         this.width = width;
         this.height = height;
+    }
+    public interface surfaceListener{
+        void onSurfaceCreated();
     }
 
     @Override
@@ -39,9 +42,15 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
     }
 
+    public void setSurfaceListener(surfaceListener listener) {
+        this.listener = listener;
+    }
+
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-
+        if (listener != null){
+            listener.onSurfaceCreated();
+        }
         glViewport(0, 0, width, height);
 
         int bufferSize = this.width * this.height * 3 / 2 ;
@@ -62,7 +71,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
         glClearColor(1f, 1f, 1f, 1f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-
+        if (mYUVBuffer == null) return;
         synchronized (mYUVBuffer) {
             mYUVProgram.draw(mYUVBuffer.array());
         }
@@ -73,6 +82,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
     @Override
     public void onImageReaderFrameCallBack(byte[] data) {
 
+        if (mYUVBuffer == null) return;
         synchronized (mYUVBuffer) {
             mYUVBuffer.position(0);
             mYUVBuffer.put(data);

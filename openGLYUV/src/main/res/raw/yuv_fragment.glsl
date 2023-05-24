@@ -8,9 +8,9 @@ uniform sampler2D uv_texture;
 void main() {
 //    float r, g, b, y, u, v;
 //
-//    y = texture2D(y_texture, v_TextureCoordinates).g;
-//    u = texture2D(uv_texture, v_TextureCoordinates).g - 0.5;
-//    v = texture2D(uv_texture, v_TextureCoordinates).g - 0.5;
+//    y = texture2D(y_texture, v_TextureCoordinates).r;
+//    u = texture2D(uv_texture, v_TextureCoordinates).a - 0.5;
+//    v = texture2D(uv_texture, v_TextureCoordinates).r - 0.5;
 //
 //    r = y + 1.13983 * v;
 //    g = y - 0.39465 * u - 0.58060 * v;

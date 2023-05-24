@@ -18,23 +18,31 @@
     android:layout_height="match_parent">
 
     <com.quectel.camera.display.AutoFitTextureView
-        android:layout_gravity="center"
         android:id="@+id/texture"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="visible" />
+
 
     <android.opengl.GLSurfaceView
-        android:visibility="visible"
         android:id="@+id/glSurfaceview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/iv_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 
     <RelativeLayout
-        android:visibility="gone"
-        android:layout_gravity="bottom"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical">
+        android:layout_gravity="bottom"
+        android:gravity="center_vertical"
+        android:visibility="gone">
 
         <Button
             android:id="@+id/video"

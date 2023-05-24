@@ -28,3 +28,18 @@
 -keep class com.quectel.openglyuv.display.utils.CameraUtil {
    public *;
 }
+-keep class com.quectel.openglyuv.display.utils.Camera2Helper {
+   *;
+}
+-keep public interface com.quectel.openglyuv.display.utils.Camera2Helper$onPreviewFrame{ *;}
+-keep public interface com.quectel.openglyuv.display.utils.Camera2Helper$onCameraError{ *;}
+-keep public class com.quectel.openglyuv.display.utils.Camera2Helper$ImageSaver{ *;}
+-keep class com.quectel.openglyuv.display.utils.Camera1Helper {
+   public *;
+}
+-keep class com.quectel.openglyuv.display.utils.SystemPropertiesProxy {
+   public *;
+}
+-keep class com.quectel.openglyuv.display.utils.SDcardUtil {
+   public *;
+}

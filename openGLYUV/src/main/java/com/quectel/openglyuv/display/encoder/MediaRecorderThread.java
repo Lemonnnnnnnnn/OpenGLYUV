@@ -18,7 +18,7 @@ public class MediaRecorderThread extends Thread{
     private MediaCodec encodeCodec;
     private MediaMuxer mMediaMuxer;
     private int colorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible;
-    private int bitRate = 10*1024*1024;
+    private int bitRate = 1*1024*1024;
     private int encodeFrameRate = 30;
     private final Vector<byte[]> frameBytes;
     private int encodeVideoTrackIndex;
@@ -67,17 +67,22 @@ public class MediaRecorderThread extends Thread{
 
     public void stopAndRelease() {
         isRun = false;
-        mMediaMuxer.stop();
-        mMediaMuxer.release();
-        encodeCodec.stop();
-        encodeCodec.release();
+        if (mMediaMuxer != null){
+            mMediaMuxer.stop();
+            mMediaMuxer.release();
+        }
+
+        if (encodeCodec != null){
+            encodeCodec.stop();
+            encodeCodec.release();
+        }
     }
     public void add(byte[] data) {
         if (!isRun) return;
         if (frameBytes.size() > CACHE_SIZE) {
             frameBytes.remove(0);
         }
-        Log.d(MediaCodecUtil.TAG,"video frameBytes.size ==  "+frameBytes.size());
+//        Log.d(MediaCodecUtil.TAG,"video frameBytes.size ==  "+frameBytes.size());
         frameBytes.add(data);
     }
     private long computePresentationTime() {
@@ -115,54 +120,54 @@ public class MediaRecorderThread extends Thread{
             if (frameBytes.isEmpty()){
                 continue;
             }
-            byte[] yuvBytes = frameBytes.remove(0);
-            Log.d(MediaCodecUtil.TAG, "video encodeData");
-            long presentationTimeUs = computePresentationTime();
-            MediaCodec.BufferInfo encodeOutputBufferInfo = new MediaCodec.BufferInfo();
-            int inputBufferIndex = encodeCodec.dequeueInputBuffer(5000);
-            if (inputBufferIndex >= 0) {
-                ByteBuffer inputBuffer = encodeCodec.getInputBuffer(inputBufferIndex);
-                inputBuffer.put(yuvBytes);
-                encodeCodec.queueInputBuffer(inputBufferIndex, 0, yuvBytes.length, presentationTimeUs, 0);
-            } else {
-                Log.d(MediaCodecUtil.TAG, "video dequeueInputBuffer failed currentIndex =" + inputBufferIndex);
+            try {
+                byte[] yuvBytes = frameBytes.remove(0);
+//                Log.d(MediaCodecUtil.TAG, "video encodeData");
+                long presentationTimeUs = computePresentationTime();
+                MediaCodec.BufferInfo encodeOutputBufferInfo = new MediaCodec.BufferInfo();
+                int inputBufferIndex = encodeCodec.dequeueInputBuffer(5000);
+                if (inputBufferIndex >= 0) {
+                    ByteBuffer inputBuffer = encodeCodec.getInputBuffer(inputBufferIndex);
+                    inputBuffer.put(yuvBytes);
+                    encodeCodec.queueInputBuffer(inputBufferIndex, 0, yuvBytes.length, presentationTimeUs, 0);
+                } else {
+                    Log.d(MediaCodecUtil.TAG, "video dequeueInputBuffer failed currentIndex =" + inputBufferIndex);
+                }
+
+                if ((encodeOutputBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    Log.v(MediaCodecUtil.TAG, " encode  buffer stream end");
+                }
+
+                int outputBufferIndex = encodeCodec.dequeueOutputBuffer(encodeOutputBufferInfo, 5000);
+                switch (outputBufferIndex) {
+                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                        MediaFormat newFormat = encodeCodec.getOutputFormat();
+                        encodeVideoTrackIndex = mMediaMuxer.addTrack(newFormat);
+                        mMediaMuxer.start();
+                        break;
+                    case MediaCodec.INFO_TRY_AGAIN_LATER:
+                        break;
+                    default:
+                        ByteBuffer outputBuffer = encodeCodec.getOutputBuffer(outputBufferIndex);
+                        if (encodeOutputBufferInfo.size != 0) {
+                            encodeOutputBufferInfo.presentationTimeUs = presentationTimeUs;
+                            //写到mp4
+                            //根据偏移定位
+                            outputBuffer.position(encodeOutputBufferInfo.offset);
+                            //ByteBuffer 可读写总长度
+                            outputBuffer.limit(encodeOutputBufferInfo.offset + encodeOutputBufferInfo.size);
+                        }
+                        if (encodeVideoTrackIndex == -1){
+                            encodeVideoTrackIndex = writeHeadInfo(outputBuffer,encodeOutputBufferInfo);
+                        }
+                        mMediaMuxer.writeSampleData(encodeVideoTrackIndex, outputBuffer, encodeOutputBufferInfo);
+                        encodeCodec.releaseOutputBuffer(outputBufferIndex, false);
+                        break;
+                }
+            }catch (Exception e){
+                e.printStackTrace();
             }
 
-            if ((encodeOutputBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                Log.v(MediaCodecUtil.TAG, " encode  buffer stream end");
-            }
-
-            int outputBufferIndex = encodeCodec.dequeueOutputBuffer(encodeOutputBufferInfo, 5000);
-            switch (outputBufferIndex) {
-                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                    MediaFormat newFormat = encodeCodec.getOutputFormat();
-                    encodeVideoTrackIndex = mMediaMuxer.addTrack(newFormat);
-                    mMediaMuxer.start();
-                    break;
-                case MediaCodec.INFO_TRY_AGAIN_LATER:
-                    break;
-                default:
-                    ByteBuffer outputBuffer = encodeCodec.getOutputBuffer(outputBufferIndex);
-                    if (encodeOutputBufferInfo.size != 0) {
-                        encodeOutputBufferInfo.presentationTimeUs = presentationTimeUs;
-                        //写到mp4
-                        //根据偏移定位
-                        outputBuffer.position(encodeOutputBufferInfo.offset);
-                        //ByteBuffer 可读写总长度
-                        outputBuffer.limit(encodeOutputBufferInfo.offset + encodeOutputBufferInfo.size);
-                    }
-                    if (encodeVideoTrackIndex == -1){
-                        encodeVideoTrackIndex = writeHeadInfo(outputBuffer,encodeOutputBufferInfo);
-                    }
-//                muxerOutputBufferInfo.offset = 0;
-//                muxerOutputBufferInfo.size = encodeOutputBufferInfo.size;
-//                muxerOutputBufferInfo.flags = isVideoEOS ? MediaCodec.BUFFER_FLAG_END_OF_STREAM : MediaCodec.BUFFER_FLAG_KEY_FRAME;
-//                muxerOutputBufferInfo.presentationTimeUs = presentationTimeUs;
-                    mMediaMuxer.writeSampleData(encodeVideoTrackIndex, outputBuffer, encodeOutputBufferInfo);
-                    encodeCodec.releaseOutputBuffer(outputBufferIndex, false);
-                    Log.d(MediaCodecUtil.TAG, "video encode frame success");
-                    break;
-            }
         }
     }
 }

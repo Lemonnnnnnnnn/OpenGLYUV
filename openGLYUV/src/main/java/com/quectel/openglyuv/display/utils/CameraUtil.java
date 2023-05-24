@@ -220,8 +220,8 @@ public class CameraUtil {
 //        uBuffer.get(nv21, ySize, uSize);
 
 //        return YuvUtil.NV21toI420SemiPlanar(nv21,width,height);
-        return NV21toI420SemiPlanar(nv21,width,height);
-//        return nv21;
+//        return NV21toI420SemiPlanar(nv21,width,height);
+        return nv21;
     }
 
     public static byte[] YUV_420_888toNV12(Image image) {

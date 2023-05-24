@@ -77,8 +77,8 @@ public class YUVProgram extends ShaderProgram {
     public YUVProgram(Context context, int width, int height) {
         super(context, R.raw.yuv_vertex, R.raw.yuv_fragment);
 
-        mWidth = Math.max(width, height);
-        mHeight = Math.min(width, height);
+        mWidth = width;
+        mHeight = height;
 
         mUniformYTextureLocation = glGetUniformLocation(mProgram, "y_texture");
         mUniformUVTextureLocation = glGetUniformLocation(mProgram, "uv_texture");

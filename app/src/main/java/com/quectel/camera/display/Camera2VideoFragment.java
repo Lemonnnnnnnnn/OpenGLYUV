@@ -5,8 +5,12 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.graphics.YuvImage;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -34,13 +38,18 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 
 import com.quectel.openglyuv.display.encoder.MediaRecorderThread;
+import com.quectel.openglyuv.display.encoder.Mp4Writer;
 import com.quectel.openglyuv.display.opengl.CameraSurfaceRender;
+import com.quectel.openglyuv.display.utils.Camera2Helper;
 import com.quectel.openglyuv.display.utils.CameraUtil;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -106,8 +115,7 @@ public class Camera2VideoFragment extends Fragment
 
     };
 
-    private Size mPreviewSize = new Size(1280, 720);
-    private Size mSubVideoSize = new Size(640, 480);
+    private Size mPreviewSize = new Size(1920, 1080);
     private HandlerThread mBackgroundThread;
     private Handler mBackgroundHandler;
 
@@ -127,7 +135,7 @@ public class Camera2VideoFragment extends Fragment
                 public void run() {
                     startPreview();
                 }
-            }, 100);
+            }, 1000);
 
             mCameraOpenCloseLock.release();
         }
@@ -166,9 +174,11 @@ public class Camera2VideoFragment extends Fragment
     private boolean mIsRecordingVideo;
     private Button recorder;
     private MediaRecorderThread mediaRecorderThread;
+    private Mp4Writer mp4Writer;
     private Range<Integer>[] fpsRange;
     private GLSurfaceView glSurfaceView;
     private CameraSurfaceRender render;
+    private ImageView ivPreview;
 
     public static Camera2VideoFragment newInstance(String cameraID) {
         Camera2VideoFragment camera2VideoFragment = new Camera2VideoFragment();
@@ -219,33 +229,31 @@ public class Camera2VideoFragment extends Fragment
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-//        if (cameraId.equals("0")) {
-        initDump();
-//            mPreviewSize = new Size(1920,1080);
+        ivPreview = view.findViewById(R.id.iv_preview);
+//        if (cameraId.equals("3")) {
+//            initDump();
+//            mPreviewSize = new Size(1280,720);
 //        }
         recorder = view.findViewById(R.id.video);
-        glSurfaceView = view.findViewById(R.id.glSurfaceview);
-        render = new CameraSurfaceRender(glSurfaceView,mPreviewSize.getWidth(),mPreviewSize.getHeight());
-        glSurfaceView.setEGLContextClientVersion(2);
-        glSurfaceView.setRenderer(render);
-        glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+//        glSurfaceView = view.findViewById(R.id.glSurfaceview);
+//        render = new CameraSurfaceRender(glSurfaceView, mPreviewSize.getWidth(), mPreviewSize.getHeight());
+//        glSurfaceView.setEGLContextClientVersion(2);
+//        glSurfaceView.setRenderer(render);
+//        glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         recorder.setOnClickListener(this);
-
     }
 
     @Override
     public void onResume() {
         super.onResume();
         startBackgroundThread();
-
-
         if (mTextureView.isAvailable()) {
             openCamera(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
 
-        if (glSurfaceView != null){
+        if (glSurfaceView != null) {
             glSurfaceView.onResume();
         }
     }
@@ -254,7 +262,7 @@ public class Camera2VideoFragment extends Fragment
     public void onPause() {
         Log.d(TAG, "onPause||cameraId =" + cameraId);
         super.onPause();
-        if (glSurfaceView != null && render != null){
+        if (glSurfaceView != null && render != null) {
             glSurfaceView.onPause();
         }
     }
@@ -268,8 +276,11 @@ public class Camera2VideoFragment extends Fragment
     }
 
     public void startRecorder() {
-        mediaRecorderThread = new MediaRecorderThread(getActivity());
-        mediaRecorderThread.startEncode(mPreviewSize.getWidth(), mPreviewSize.getHeight(), getVideoPath(getActivity().getApplicationContext(), false));
+        mp4Writer = new Mp4Writer(getActivity(), mPreviewSize.getWidth(), mPreviewSize.getHeight(),
+                30, getVideoPath(getActivity().getApplicationContext(), false));
+        mp4Writer.startWrite();
+//        mediaRecorderThread = new MediaRecorderThread(getActivity());
+//        mediaRecorderThread.startEncode(mPreviewSize.getWidth(), mPreviewSize.getHeight(), getVideoPath(getActivity().getApplicationContext(), false));
         mIsRecordingVideo = true;
     }
 
@@ -277,6 +288,10 @@ public class Camera2VideoFragment extends Fragment
         if (mediaRecorderThread != null) {
             mediaRecorderThread.stopAndRelease();
             mediaRecorderThread = null;
+        }
+        if (mp4Writer != null) {
+            mp4Writer.endWrite();
+            mp4Writer = null;
         }
         mIsRecordingVideo = false;
     }
@@ -308,7 +323,7 @@ public class Camera2VideoFragment extends Fragment
      * Starts a background thread and its {@link Handler}.
      */
     private void startBackgroundThread() {
-        mBackgroundThread = new HandlerThread("CameraBackground");
+        mBackgroundThread = new HandlerThread("CameraBackground_"+cameraId);
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
     }
@@ -350,7 +365,6 @@ public class Camera2VideoFragment extends Fragment
             }
             fpsRange = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
             Log.d(TAG, "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES == " + Arrays.toString(fpsRange));
-            Log.d(TAG, "mSubVideoSize  width=" + mSubVideoSize.getWidth() + ";height=" + mSubVideoSize.getHeight());
             Log.d(TAG, "mPreviewSize width=" + mPreviewSize.getWidth() + ";height=" + mPreviewSize.getHeight());
             int orientation = getResources().getConfiguration().orientation;
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -358,14 +372,9 @@ public class Camera2VideoFragment extends Fragment
             } else {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
             }
-            manager.openCamera(cameraId, mStateCallback, null);
-        } catch (CameraAccessException e) {
-            Toast.makeText(activity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
-            activity.finish();
-        } catch (NullPointerException e) {
+            manager.openCamera(cameraId, mStateCallback, mBackgroundHandler);
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera opening.");
         }
     }
 
@@ -396,16 +405,15 @@ public class Camera2VideoFragment extends Fragment
         }
         try {
             closePreviewSession();
+
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             List<Surface> list = new ArrayList<>();
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-//            Surface previewSurface = new Surface(texture);
-//            list.add(previewSurface);
-//            mPreviewBuilder.addTarget(previewSurface);
-
-
+            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            Surface previewSurface = new Surface(texture);
+            list.add(previewSurface);
+            mPreviewBuilder.addTarget(previewSurface);
             setupImageReader();
             //获取ImageReader的Surface
             Surface imageReaderSurface = mImageReader.getSurface();
@@ -413,8 +421,7 @@ public class Camera2VideoFragment extends Fragment
             //CaptureRequest添加imageReaderSurface，不加的话就会导致ImageReader的onImageAvailable()方法不会回调
             mPreviewBuilder.addTarget(imageReaderSurface);
             //创建CaptureSession时加上imageReaderSurface，如下，这样预览数据就会同时输出到previewSurface和imageReaderSurface了
-            mCameraDevice.createCaptureSession(list,
-                    new CameraCaptureSession.StateCallback() {
+            mCameraDevice.createCaptureSession(list, new CameraCaptureSession.StateCallback() {
 
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
@@ -443,7 +450,7 @@ public class Camera2VideoFragment extends Fragment
     private void setupImageReader() {
         //前三个参数分别是需要的尺寸和格式，最后一个参数代表每次最多获取几帧数据，本例的2代表ImageReader中最多可以获取两帧图像流
         mImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(),
-                ImageFormat.YUV_420_888, 10);
+                ImageFormat.YUV_420_888, 2);
 
         //监听ImageReader的事件，当有图像流数据可用时会回调onImageAvailable方法，它的参数就是预览帧数据，可以对这帧数据进行处理
         mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
@@ -457,14 +464,20 @@ public class Camera2VideoFragment extends Fragment
                 Image image = reader.acquireLatestImage();
                 //我们可以将这帧数据转成字节数组，类似于Camera1的PreviewCallback回调的预览帧数据
                 if (image != null) {
-                    bytes = CameraUtil.YUV_420_888toNV21(image);
+                    bytes = CameraUtil.YUV_420_888toNV12(image);
+                    byte [] glData = new byte[bytes.length];
+                    System.arraycopy(bytes,0,glData,0,bytes.length);
                     if (mediaRecorderThread != null) {
-                        mediaRecorderThread.add(bytes);
+//                        mediaRecorderThread.add(bytes);
+                    }
+                    if (mp4Writer != null){
+                        mp4Writer.write(bytes);
                     }
 
-                    if (render != null){
-                        render.onImageReaderFrameCallBack(bytes);
+                    if (render != null ) {
+                        render.onImageReaderFrameCallBack(glData);
                     }
+//                    dumpYUV(bytes);
 //                    YuvImage image2 = new YuvImage(bytes,ImageFormat.NV21,mPreviewSize.getWidth(),mPreviewSize.getHeight(),null);
 //                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
 //                    image2.compressToJpeg(new Rect(0,0,mPreviewSize.getWidth(),mPreviewSize.getHeight()),80,stream);
@@ -487,7 +500,6 @@ public class Camera2VideoFragment extends Fragment
             }
         }, mBackgroundHandler);
     }
-
 
 
     /**
