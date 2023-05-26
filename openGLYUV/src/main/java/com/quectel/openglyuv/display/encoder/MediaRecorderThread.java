@@ -13,12 +13,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Vector;
 
-public class MediaRecorderThread extends Thread{
+public class MediaRecorderThread extends Thread {
     boolean isRun = false;
     private MediaCodec encodeCodec;
     private MediaMuxer mMediaMuxer;
     private int colorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible;
-    private int bitRate = 1*1024*1024;
+    private int bitRate = 1 * 1024 * 1024;
     private int encodeFrameRate = 30;
     private final Vector<byte[]> frameBytes;
     private int encodeVideoTrackIndex;
@@ -42,7 +42,7 @@ public class MediaRecorderThread extends Thread{
         this.encodeFrameRate = encodeFrameRate;
     }
 
-    public void startEncode(int width, int height, String savePath){
+    public void startEncode(int width, int height, String savePath) {
         try {
             String codecName = MediaCodecUtil.getExpectedEncodeCodec(MediaFormat.MIMETYPE_VIDEO_AVC, colorFormat);
             MediaFormat encodeMediaFormat = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height);
@@ -56,9 +56,7 @@ public class MediaRecorderThread extends Thread{
             encodeCodec.start();
             mMediaMuxer = new MediaMuxer(savePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
             isRun = true;
-            if (!(this.isAlive())){
-                start();
-            }
+            start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -67,16 +65,17 @@ public class MediaRecorderThread extends Thread{
 
     public void stopAndRelease() {
         isRun = false;
-        if (mMediaMuxer != null){
+        if (mMediaMuxer != null) {
             mMediaMuxer.stop();
             mMediaMuxer.release();
         }
 
-        if (encodeCodec != null){
+        if (encodeCodec != null) {
             encodeCodec.stop();
             encodeCodec.release();
         }
     }
+
     public void add(byte[] data) {
         if (!isRun) return;
         if (frameBytes.size() > CACHE_SIZE) {
@@ -85,9 +84,11 @@ public class MediaRecorderThread extends Thread{
 //        Log.d(MediaCodecUtil.TAG,"video frameBytes.size ==  "+frameBytes.size());
         frameBytes.add(data);
     }
+
     private long computePresentationTime() {
         return System.nanoTime() / 1000L;
     }
+
     private int writeHeadInfo(ByteBuffer outputBuffer, MediaCodec.BufferInfo bufferInfo) {
         byte[] csd = new byte[bufferInfo.size];
         outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
@@ -116,8 +117,8 @@ public class MediaRecorderThread extends Thread{
 
     @Override
     public void run() {
-        while (isRun){
-            if (frameBytes.isEmpty()){
+        while (isRun) {
+            if (frameBytes.isEmpty()) {
                 continue;
             }
             try {
@@ -157,14 +158,14 @@ public class MediaRecorderThread extends Thread{
                             //ByteBuffer 可读写总长度
                             outputBuffer.limit(encodeOutputBufferInfo.offset + encodeOutputBufferInfo.size);
                         }
-                        if (encodeVideoTrackIndex == -1){
-                            encodeVideoTrackIndex = writeHeadInfo(outputBuffer,encodeOutputBufferInfo);
+                        if (encodeVideoTrackIndex == -1) {
+                            encodeVideoTrackIndex = writeHeadInfo(outputBuffer, encodeOutputBufferInfo);
                         }
                         mMediaMuxer.writeSampleData(encodeVideoTrackIndex, outputBuffer, encodeOutputBufferInfo);
                         encodeCodec.releaseOutputBuffer(outputBufferIndex, false);
                         break;
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 

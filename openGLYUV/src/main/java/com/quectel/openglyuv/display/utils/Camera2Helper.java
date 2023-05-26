@@ -15,10 +15,12 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
@@ -78,7 +80,13 @@ public class Camera2Helper {
             Log.d(TAG, "CameraDevice.StateCallback ======= onOpened");
             mCameraDevice = camera;
             //开启预览
-            createPreview();
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    createPreview();
+                }
+            },1000);
+
         }
 
         @Override
@@ -206,6 +214,7 @@ public class Camera2Helper {
             cameraCaptureSession = session;
             try {
                 //发送请求
+//                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(30,30));
                 mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
                 cameraCaptureSession.setRepeatingRequest(mPreviewBuilder.build(),
                         null, mMainHandler);

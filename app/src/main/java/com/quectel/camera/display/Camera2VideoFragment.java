@@ -63,7 +63,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class Camera2VideoFragment extends Fragment
-        implements View.OnClickListener, MediaRecorder.OnInfoListener {
+        implements View.OnClickListener {
     private static final int SENSOR_ORIENTATION_DEFAULT_DEGREES = 90;
     private static final int SENSOR_ORIENTATION_INVERSE_DEGREES = 270;
     private static final SparseIntArray DEFAULT_ORIENTATIONS = new SparseIntArray();
@@ -130,12 +130,12 @@ public class Camera2VideoFragment extends Fragment
         public void onOpened(@NonNull CameraDevice cameraDevice) {
             Log.d(TAG, "onOpened");
             mCameraDevice = cameraDevice;
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
+//            new Handler().postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
                     startPreview();
-                }
-            }, 1000);
+//                }
+//            }, 1000);
 
             mCameraOpenCloseLock.release();
         }
@@ -313,12 +313,6 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
-    @Override
-    public void onInfo(MediaRecorder mediaRecorder, int i, int i1) {
-        Log.d(TAG, " onInfo");
-
-    }
-
     /**
      * Starts a background thread and its {@link Handler}.
      */
@@ -414,12 +408,12 @@ public class Camera2VideoFragment extends Fragment
             Surface previewSurface = new Surface(texture);
             list.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
-            setupImageReader();
+//            setupImageReader();
             //获取ImageReader的Surface
-            Surface imageReaderSurface = mImageReader.getSurface();
-            list.add(imageReaderSurface);
+//            Surface imageReaderSurface = mImageReader.getSurface();
+//            list.add(imageReaderSurface);
             //CaptureRequest添加imageReaderSurface，不加的话就会导致ImageReader的onImageAvailable()方法不会回调
-            mPreviewBuilder.addTarget(imageReaderSurface);
+//            mPreviewBuilder.addTarget(imageReaderSurface);
             //创建CaptureSession时加上imageReaderSurface，如下，这样预览数据就会同时输出到previewSurface和imageReaderSurface了
             mCameraDevice.createCaptureSession(list, new CameraCaptureSession.StateCallback() {
 

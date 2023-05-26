@@ -21,7 +21,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
     private YUVProgram mYUVProgram;
 
-    private ByteBuffer mYUVBuffer;
+    private ByteBuffer mYUVBuffer,mYBuffer,mUVBuffer;
 
     private final GLSurfaceView mGLSurfaceView;
 
@@ -55,9 +55,12 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
         int bufferSize = this.width * this.height * 3 / 2 ;
 
-        mYUVBuffer = ByteBuffer.allocateDirect(bufferSize)
+//        mYUVBuffer = ByteBuffer.allocateDirect(bufferSize)
+//                .order(ByteOrder.nativeOrder());
+        mYBuffer = ByteBuffer.allocateDirect(this.width * this.height)
                 .order(ByteOrder.nativeOrder());
-
+        mUVBuffer = ByteBuffer.allocateDirect(this.width * this.height / 2)
+                .order(ByteOrder.nativeOrder());
         int[] textures = new int[1];
         glGenTextures(1, textures, 0);
         mSurfaceTexture = new SurfaceTexture(textures[0]);
@@ -71,10 +74,11 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
         glClearColor(1f, 1f, 1f, 1f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        if (mYUVBuffer == null) return;
-        synchronized (mYUVBuffer) {
-            mYUVProgram.draw(mYUVBuffer.array());
-        }
+//        synchronized (this) {
+            mUVBuffer.position(0);
+            mYBuffer.position(0);
+            mYUVProgram.draw(mYBuffer,mUVBuffer);
+//        }
 
         mSurfaceTexture.updateTexImage();
     }
@@ -82,11 +86,13 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
     @Override
     public void onImageReaderFrameCallBack(byte[] data) {
 
-        if (mYUVBuffer == null) return;
-        synchronized (mYUVBuffer) {
-            mYUVBuffer.position(0);
-            mYUVBuffer.put(data);
-        }
+//        synchronized (mYUVBuffer) {
+            mYBuffer.position(0);
+            mYBuffer.put(data,0,width * height);
+
+            mUVBuffer.position(0);
+            mUVBuffer.put(data,width * height,width * height / 2);
+//        }
 
         mGLSurfaceView.requestRender();
     }

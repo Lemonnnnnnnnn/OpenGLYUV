@@ -126,16 +126,24 @@ public class YUVProgram extends ShaderProgram {
 
         mGLTextureBuffer.clear();
         mGLTextureBuffer.put(TEXTURE_NO_ROTATION).position(0);
+
+        mGLCubeBuffer.position(0);
+        glVertexAttribPointer(mPositionLocation, 2, GL_FLOAT, false, 0, mGLCubeBuffer);
+        glEnableVertexAttribArray(mPositionLocation);
+
+        mGLTextureBuffer.position(0);
+        glVertexAttribPointer(mTextureCoordinatesLocation, 2, GL_FLOAT, false, 0, mGLTextureBuffer);
+        glEnableVertexAttribArray(mTextureCoordinatesLocation);
     }
 
-    public void draw(byte[] data) {
+    public void draw(ByteBuffer mYBuffer,ByteBuffer mUVBuffer) {
         useProgram();
 
         mYBuffer.position(0);
-        mYBuffer.put(data, 0, mWidth * mHeight);
+//        mYBuffer.put(data, 0, mWidth * mHeight);
 
-        mUVBuffer.position(0);
-        mUVBuffer.put(data, mWidth * mHeight, mWidth * mHeight / 2);
+//        mUVBuffer.position(0);
+//        mUVBuffer.put(data, mWidth * mHeight, mWidth * mHeight / 2);
 
         mYBuffer.position(0);
         glActiveTexture(GL_TEXTURE0);
@@ -144,7 +152,7 @@ public class YUVProgram extends ShaderProgram {
                 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mYBuffer);
         glUniform1i(mUniformYTextureLocation, 0);
 
-        mUVBuffer.position(0);
+//        mUVBuffer.position(0);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, mUVTextureId);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, mWidth / 2, mHeight / 2,
@@ -157,14 +165,6 @@ public class YUVProgram extends ShaderProgram {
         Matrix.rotateM(mMatrix, 0, degrees, 0.0f, 0.0f, 1.0f);
 
         GLES20.glUniformMatrix4fv(mMVPMatrixLocation, 1, false, mMatrix, 0);
-
-        mGLCubeBuffer.position(0);
-        glVertexAttribPointer(mPositionLocation, 2, GL_FLOAT, false, 0, mGLCubeBuffer);
-        glEnableVertexAttribArray(mPositionLocation);
-
-        mGLTextureBuffer.position(0);
-        glVertexAttribPointer(mTextureCoordinatesLocation, 2, GL_FLOAT, false, 0, mGLTextureBuffer);
-        glEnableVertexAttribArray(mTextureCoordinatesLocation);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }

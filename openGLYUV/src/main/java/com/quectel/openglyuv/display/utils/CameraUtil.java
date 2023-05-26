@@ -6,6 +6,7 @@ import android.media.Image;
 import android.util.Size;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -246,6 +247,21 @@ public class CameraUtil {
 //        uBuffer.get(nv21, ySize + vSize, uSize);
 
         return nv12;
+    }
+
+    public static ByteBuffer YUV_420_888toByteBuffer(Image image){
+        ByteBuffer nv12ByteBuffer ;
+        ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
+        ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
+        ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
+        int width = image.getWidth();
+        int height = image.getHeight();
+        nv12ByteBuffer = ByteBuffer.allocateDirect(width * height * 3 / 2)
+                .order(ByteOrder.nativeOrder());
+        nv12ByteBuffer.position(0);
+        nv12ByteBuffer.put(yBuffer);
+        nv12ByteBuffer.put(uBuffer);
+        return nv12ByteBuffer;
     }
 
     public static byte[] getNV21FromImage(Image image) {
