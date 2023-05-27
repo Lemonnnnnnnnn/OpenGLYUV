@@ -136,14 +136,14 @@ public class YUVProgram extends ShaderProgram {
         glEnableVertexAttribArray(mTextureCoordinatesLocation);
     }
 
-    public void draw(ByteBuffer mYBuffer,ByteBuffer mUVBuffer) {
+    public void draw(byte[] data) {
         useProgram();
 
         mYBuffer.position(0);
-//        mYBuffer.put(data, 0, mWidth * mHeight);
+        mYBuffer.put(data, 0, mWidth * mHeight);
 
-//        mUVBuffer.position(0);
-//        mUVBuffer.put(data, mWidth * mHeight, mWidth * mHeight / 2);
+        mUVBuffer.position(0);
+        mUVBuffer.put(data, mWidth * mHeight, mWidth * mHeight / 2);
 
         mYBuffer.position(0);
         glActiveTexture(GL_TEXTURE0);
@@ -152,19 +152,19 @@ public class YUVProgram extends ShaderProgram {
                 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mYBuffer);
         glUniform1i(mUniformYTextureLocation, 0);
 
-//        mUVBuffer.position(0);
+        mUVBuffer.position(0);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, mUVTextureId);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, mWidth / 2, mHeight / 2,
                 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, mUVBuffer);
         glUniform1i(mUniformUVTextureLocation, 1);
 
-        Matrix.setIdentityM(mMatrix, 0);
-        int orientation = mContext.getResources().getConfiguration().orientation;
-        int degrees = orientation == Configuration.ORIENTATION_LANDSCAPE ? 0 : -90;
-        Matrix.rotateM(mMatrix, 0, degrees, 0.0f, 0.0f, 1.0f);
-
-        GLES20.glUniformMatrix4fv(mMVPMatrixLocation, 1, false, mMatrix, 0);
+//        Matrix.setIdentityM(mMatrix, 0);
+//        int orientation = mContext.getResources().getConfiguration().orientation;
+//        int degrees = orientation == Configuration.ORIENTATION_LANDSCAPE ? 0 : -90;
+//        Matrix.rotateM(mMatrix, 0, degrees, 0.0f, 0.0f, 1.0f);
+//
+//        GLES20.glUniformMatrix4fv(mMVPMatrixLocation, 1, false, mMatrix, 0);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }

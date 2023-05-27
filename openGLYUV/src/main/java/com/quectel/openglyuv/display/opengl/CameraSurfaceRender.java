@@ -21,7 +21,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
     private YUVProgram mYUVProgram;
 
-    private ByteBuffer mYUVBuffer,mYBuffer,mUVBuffer;
+    private ByteBuffer mYUVBuffer;
 
     private final GLSurfaceView mGLSurfaceView;
 
@@ -55,11 +55,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
         int bufferSize = this.width * this.height * 3 / 2 ;
 
-//        mYUVBuffer = ByteBuffer.allocateDirect(bufferSize)
-//                .order(ByteOrder.nativeOrder());
-        mYBuffer = ByteBuffer.allocateDirect(this.width * this.height)
-                .order(ByteOrder.nativeOrder());
-        mUVBuffer = ByteBuffer.allocateDirect(this.width * this.height / 2)
+        mYUVBuffer = ByteBuffer.allocateDirect(bufferSize)
                 .order(ByteOrder.nativeOrder());
         int[] textures = new int[1];
         glGenTextures(1, textures, 0);
@@ -75,9 +71,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
         glClear(GL_COLOR_BUFFER_BIT);
 
 //        synchronized (this) {
-            mUVBuffer.position(0);
-            mYBuffer.position(0);
-            mYUVProgram.draw(mYBuffer,mUVBuffer);
+            mYUVProgram.draw(mYUVBuffer.array());
 //        }
 
         mSurfaceTexture.updateTexImage();
@@ -87,11 +81,8 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
     public void onImageReaderFrameCallBack(byte[] data) {
 
 //        synchronized (mYUVBuffer) {
-            mYBuffer.position(0);
-            mYBuffer.put(data,0,width * height);
-
-            mUVBuffer.position(0);
-            mUVBuffer.put(data,width * height,width * height / 2);
+            mYUVBuffer.position(0);
+            mYUVBuffer.put(data);
 //        }
 
         mGLSurfaceView.requestRender();

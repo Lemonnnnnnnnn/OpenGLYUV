@@ -2,6 +2,7 @@ package com.quectel.camera.display;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,31 +25,52 @@ public class CameraActivity extends Activity {
             Manifest.permission.READ_EXTERNAL_STORAGE,
     };
 
-    Camera2VideoFragment fragment0 = Camera2VideoFragment.newInstance("0");
-    Camera2VideoFragment fragment1 = Camera2VideoFragment.newInstance("1");
-    Camera2VideoFragment fragment2 = Camera2VideoFragment.newInstance("2");
-    Camera2VideoFragment fragment3 = Camera2VideoFragment.newInstance("3");
-    Camera2VideoFragment fragment4 = Camera2VideoFragment.newInstance("4");
-    Camera2VideoFragment fragment5 = Camera2VideoFragment.newInstance("5");
-
-//    Camera1VideoFragment fragment1_0 = Camera1VideoFragment.newInstance("0");
-//    Camera1VideoFragment fragment1_1 = Camera1VideoFragment.newInstance("1");
-//    Camera1VideoFragment fragment1_2 = Camera1VideoFragment.newInstance("2");
-//    Camera1VideoFragment fragment1_3 = Camera1VideoFragment.newInstance("3");
-//    Camera1VideoFragment fragment1_4 = Camera1VideoFragment.newInstance("4");
-//    Camera1VideoFragment fragment1_5 = Camera1VideoFragment.newInstance("5");
     private static final int REQUEST_VIDEO_PERMISSIONS = 1;
     private Button btn;
+    private Camera1VideoFragment fragment;
+    private Camera1VideoFragment fragment1;
+    private Camera1VideoFragment fragment2;
+    private Camera1VideoFragment fragment3;
+    private Camera1VideoFragment fragment4;
+    private Camera1VideoFragment fragment5;
 
-//    Handler handler = new Handler(){
-//        @Override
-//        public void handleMessage(@NonNull Message msg) {
-//            super.handleMessage(msg);
-//            getFragmentManager().beginTransaction()
-//                    .replace(R.id.container1, fragment1)
-//                    .commit();
-//        }
-//    };
+    Handler handler = new Handler(){
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case 0:
+                    fragment = Camera1VideoFragment.newInstance("0");
+                    replaceFragment(R.id.container,fragment);
+                    break;
+                case 1:
+                    fragment1 = Camera1VideoFragment.newInstance("1");
+                    replaceFragment(R.id.container1,fragment1);
+                    break;
+                case 2:
+                    fragment2 = Camera1VideoFragment.newInstance("2");
+                    replaceFragment(R.id.container2,fragment2);
+                    break;
+                case 3:
+                    fragment3 = Camera1VideoFragment.newInstance("3");
+                    replaceFragment(R.id.container3,fragment3);
+                    break;
+                case 4:
+                    fragment4 = Camera1VideoFragment.newInstance("4");
+                    replaceFragment(R.id.container4,fragment4);
+                    break;
+                case 5:
+                    fragment5 = Camera1VideoFragment.newInstance("5");
+                    replaceFragment(R.id.container5,fragment5);
+                    break;
+            }
+        }
+    };
+    private void replaceFragment(int id, Fragment fragment){
+        getFragmentManager().beginTransaction()
+                .replace(id, fragment)
+                .commit();
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -96,15 +118,12 @@ public class CameraActivity extends Activity {
     }
 
     private void startCamera() {
-        getFragmentManager().beginTransaction()
-                .replace(R.id.container,  fragment0)
-                .replace(R.id.container1, fragment1)
-                .replace(R.id.container2, fragment2)
-                .replace(R.id.container3, fragment3)
-                .replace(R.id.container4, fragment4)
-                .replace(R.id.container5, fragment5)
-                .commit();
-//        handler.sendEmptyMessageDelayed(0,10000);
+        handler.sendEmptyMessageDelayed(0,0);
+        handler.sendEmptyMessageDelayed(1,1000);
+        handler.sendEmptyMessageDelayed(2,2000);
+        handler.sendEmptyMessageDelayed(3,3000);
+//        handler.sendEmptyMessageDelayed(4,4000);
+        handler.sendEmptyMessageDelayed(5,5000);
     }
 
 
@@ -114,69 +133,49 @@ public class CameraActivity extends Activity {
     }
 
     public void startRe(View view){
-        if (fragment0.ismIsRecordingVideo()){
-            fragment0.stopRecorder();
-            btn.setText("RECORDER");
-        }else {
-            fragment0.startRecorder();
-            btn.setText("STOP");
+        if (fragment != null) {
+            if (fragment.ismIsRecordingVideo()) {
+                fragment.stopRecorder();
+                btn.setText("RECORDER");
+            } else {
+                fragment.startRecorder();
+                btn.setText("STOP");
+            }
         }
-        if (fragment1.ismIsRecordingVideo()){
-            fragment1.stopRecorder();
-        }else {
-            fragment1.startRecorder();
+        if (fragment1 != null){
+            if (fragment1.ismIsRecordingVideo()){
+                fragment1.stopRecorder();
+            }else {
+                fragment1.startRecorder();
+            }
         }
-        if (fragment2.ismIsRecordingVideo()){
-            fragment2.stopRecorder();
-        }else {
-            fragment2.startRecorder();
+        if (fragment2 != null){
+            if (fragment2.ismIsRecordingVideo()){
+                fragment2.stopRecorder();
+            }else {
+                fragment2.startRecorder();
+            }
         }
-        if (fragment3.ismIsRecordingVideo()){
-            fragment3.stopRecorder();
-        }else {
-            fragment3.startRecorder();
+        if (fragment3 != null){
+            if (fragment3.ismIsRecordingVideo()){
+                fragment3.stopRecorder();
+            }else {
+                fragment3.startRecorder();
+            }
         }
-        if (fragment4.ismIsRecordingVideo()){
-            fragment4.stopRecorder();
-        }else {
-            fragment4.startRecorder();
+        if (fragment4 != null){
+            if (fragment4.ismIsRecordingVideo()){
+                fragment4.stopRecorder();
+            }else {
+                fragment4.startRecorder();
+            }
         }
-        if (fragment5.ismIsRecordingVideo()){
-            fragment5.stopRecorder();
-        }else {
-            fragment5.startRecorder();
+        if (fragment5 != null){
+            if (fragment5.ismIsRecordingVideo()){
+                fragment5.stopRecorder();
+            }else {
+                fragment5.startRecorder();
+            }
         }
-//        if (fragment1_0.ismIsRecordingVideo()){
-//            fragment1_0.stopRecorder();
-//            btn.setText("RECORDER");
-//        } else {
-//            fragment1_0.startRecorder();
-//            btn.setText("STOP");
-//        }
-//        if (fragment1_1.ismIsRecordingVideo()){
-//            fragment1_1.stopRecorder();
-//        }else {
-//            fragment1_1.startRecorder();
-//        }
-//        if (fragment1_2.ismIsRecordingVideo()){
-//            fragment1_2.stopRecorder();
-//        }else {
-//            fragment1_2.startRecorder();
-//        }
-//        if (fragment1_3.ismIsRecordingVideo()){
-//            fragment1_3.stopRecorder();
-//        }else {
-//            fragment1_3.startRecorder();
-//        }
-//        if (fragment1_4.ismIsRecordingVideo()){
-//            fragment1_4.stopRecorder();
-//        }else {
-//            fragment1_4.startRecorder();
-//        }
-//        if (fragment1_5.ismIsRecordingVideo()){
-//            fragment1_5.stopRecorder();
-//        }else {
-//            fragment1_5.startRecorder();
-//        }
     }
 }

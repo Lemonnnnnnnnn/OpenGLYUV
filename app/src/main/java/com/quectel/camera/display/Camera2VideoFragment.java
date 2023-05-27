@@ -408,12 +408,12 @@ public class Camera2VideoFragment extends Fragment
             Surface previewSurface = new Surface(texture);
             list.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
-//            setupImageReader();
+            setupImageReader();
             //获取ImageReader的Surface
-//            Surface imageReaderSurface = mImageReader.getSurface();
-//            list.add(imageReaderSurface);
+            Surface imageReaderSurface = mImageReader.getSurface();
+            list.add(imageReaderSurface);
             //CaptureRequest添加imageReaderSurface，不加的话就会导致ImageReader的onImageAvailable()方法不会回调
-//            mPreviewBuilder.addTarget(imageReaderSurface);
+            mPreviewBuilder.addTarget(imageReaderSurface);
             //创建CaptureSession时加上imageReaderSurface，如下，这样预览数据就会同时输出到previewSurface和imageReaderSurface了
             mCameraDevice.createCaptureSession(list, new CameraCaptureSession.StateCallback() {
 
