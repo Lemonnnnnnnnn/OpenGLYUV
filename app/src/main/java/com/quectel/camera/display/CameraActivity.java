@@ -122,7 +122,7 @@ public class CameraActivity extends Activity {
         handler.sendEmptyMessageDelayed(1,1000);
         handler.sendEmptyMessageDelayed(2,2000);
         handler.sendEmptyMessageDelayed(3,3000);
-//        handler.sendEmptyMessageDelayed(4,4000);
+        handler.sendEmptyMessageDelayed(4,4000);
         handler.sendEmptyMessageDelayed(5,5000);
     }
 

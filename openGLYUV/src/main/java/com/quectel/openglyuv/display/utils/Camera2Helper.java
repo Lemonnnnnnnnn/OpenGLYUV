@@ -47,7 +47,7 @@ public class Camera2Helper {
     private android.os.Handler mMainHandler;
     private boolean checkCamera = true;
     public onCameraError onCameraError;
-//    private ImageSaver saver;
+    //    private ImageSaver saver;
     private CameraCaptureSession cameraCaptureSession;
     private boolean isShowPreview = true;
     private onPreviewFrame previewFrame;
@@ -58,13 +58,15 @@ public class Camera2Helper {
         mContext = context;
 //        saver = new ImageSaver();
     }
-    public Camera2Helper(String cameraId, Context context,boolean isShowPreview){
+
+    public Camera2Helper(String cameraId, Context context, boolean isShowPreview) {
         mCameraId = cameraId;
         mContext = context;
         this.isShowPreview = isShowPreview;
 //        saver = new ImageSaver();
     }
-    public void setPreviewSize(Size size){
+
+    public void setPreviewSize(Size size) {
         WIDTH = size.getWidth();
         HEIGHT = size.getHeight();
     }
@@ -85,7 +87,7 @@ public class Camera2Helper {
                 public void run() {
                     createPreview();
                 }
-            },1000);
+            }, 1000);
 
         }
 
@@ -147,7 +149,7 @@ public class Camera2Helper {
             //设置一个具有输出Surface的CaptureRequest.Builder
             mPreviewBuilder = mCameraDevice.
                     createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            if (isShowPreview){
+            if (isShowPreview) {
                 mSurfaceTexture.setDefaultBufferSize(WIDTH, HEIGHT);
                 mSurface = new Surface(mSurfaceTexture);
                 surfaces.add(mSurface);
@@ -171,28 +173,42 @@ public class Camera2Helper {
         imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
             int fps = 0;
             long lastFpsNanoseconds = 0;
+            int count = 0;
+            long startTime, endTime;
+
             @Override
             public void onImageAvailable(ImageReader reader) {
                 try {
                     Image image = reader.acquireLatestImage();
                     //我们可以将这帧数据转成字节数组，类似于Camera1的PreviewCallback回调的预览帧数据
+
                     if (image != null) {
-                        fps++;
-                        //统计每秒钟打印次数获取帧率
-                        if (image.getTimestamp() != -1 && image.getTimestamp() - lastFpsNanoseconds > 1000_000_000) { //打印帧率
-                            Log.d(TAG, "---camera ID = "+mCameraId+" ----onImageAvailable fps = " + fps +"\n "+
-                                    "ImageReader.width =" + image.getWidth() + ", ImageReader.height = " + image.getHeight() );
-                            fps = 0;
-                            lastFpsNanoseconds = image.getTimestamp();
+                        // TODO: 2023-5-29 限制camera回调流为20fps
+                        if (count == 0) {
+                            startTime = System.currentTimeMillis();
                         }
-//                        if (saver.isTakePic) {
-//                            saver.setImage(image);
-//                            mMainHandler.post(saver);
-//                        } else {
-                            if (previewFrame != null){
+                        count++;
+                        if (count == 3) {
+                            count = 0;
+                            endTime = System.currentTimeMillis();
+                        }
+                        if (endTime != 0 && (endTime - startTime) <= 333) {
+                            startTime = 0;
+                            endTime = 0;
+                            image.close();
+                        } else {
+                            fps++;
+                            //统计每秒钟打印次数获取帧率
+                            if (image.getTimestamp() != -1 && image.getTimestamp() - lastFpsNanoseconds > 1000_000_000) { //打印帧率
+                                Log.d(TAG, "---camera ID = " + mCameraId + " ----onImageAvailable fps = " + fps + "\n " +
+                                        "ImageReader.width =" + image.getWidth() + ", ImageReader.height = " + image.getHeight());
+                                fps = 0;
+                                lastFpsNanoseconds = image.getTimestamp();
+                            }
+                            if (previewFrame != null) {
                                 previewFrame.previewFrameCallback(image);
                             }
-//                        }
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -214,7 +230,7 @@ public class Camera2Helper {
             cameraCaptureSession = session;
             try {
                 //发送请求
-//                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(30,30));
+//                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20,20));
                 mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
                 cameraCaptureSession.setRepeatingRequest(mPreviewBuilder.build(),
                         null, mMainHandler);
@@ -234,7 +250,7 @@ public class Camera2Helper {
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
 
-            HandlerThread mCameraThread = new HandlerThread("CameraThread"+mCameraId);
+            HandlerThread mCameraThread = new HandlerThread("CameraThread" + mCameraId);
             mCameraThread.start();
             mMainHandler = new android.os.Handler(mCameraThread.getLooper());
             if (mCameraId != null) {
@@ -352,7 +368,7 @@ public class Camera2Helper {
         void onCameraErrorListener(boolean isError);
     }
 
-    public interface onPreviewFrame{
+    public interface onPreviewFrame {
         void previewFrameCallback(Image image);
     }
 }
