@@ -169,7 +169,7 @@ public class Camera2Helper {
     private void setUpImageReader() {
 
         imageReader = ImageReader.newInstance(WIDTH, HEIGHT,
-                ImageFormat.YUV_420_888, 2);
+                ImageFormat.YUV_420_888, 10);
         imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
             int fps = 0;
             long lastFpsNanoseconds = 0;
@@ -184,19 +184,19 @@ public class Camera2Helper {
 
                     if (image != null) {
                         // TODO: 2023-5-29 限制camera回调流为20fps
-                        if (count == 0) {
-                            startTime = System.currentTimeMillis();
-                        }
-                        count++;
-                        if (count == 3) {
-                            count = 0;
-                            endTime = System.currentTimeMillis();
-                        }
-                        if (endTime != 0 && (endTime - startTime) <= 333) {
-                            startTime = 0;
-                            endTime = 0;
-                            image.close();
-                        } else {
+//                        if (count == 0) {
+//                            startTime = System.currentTimeMillis();
+//                        }
+//                        count++;
+//                        if (count == 3) {
+//                            count = 0;
+//                            endTime = System.currentTimeMillis();
+//                        }
+//                        if (endTime != 0 && (endTime - startTime) <= 333) {
+//                            startTime = 0;
+//                            endTime = 0;
+//                            image.close();
+//                        } else {
                             fps++;
                             //统计每秒钟打印次数获取帧率
                             if (image.getTimestamp() != -1 && image.getTimestamp() - lastFpsNanoseconds > 1000_000_000) { //打印帧率
@@ -208,7 +208,7 @@ public class Camera2Helper {
                             if (previewFrame != null) {
                                 previewFrame.previewFrameCallback(image);
                             }
-                        }
+//                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -227,6 +227,7 @@ public class Camera2Helper {
             //mPreviewBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE,CaptureRequest.NOISE_REDUCTION_MODE_FAST);
 //            mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE,
 //                    CaptureRequest.CONTROL_AF_MODE_AUTO);
+//            mPreviewBuilder.set(CaptureRequest.CONTROL_EFFECT_MODE,CaptureRequest.CONTROL_EFFECT_MODE_MONO);
             cameraCaptureSession = session;
             try {
                 //发送请求

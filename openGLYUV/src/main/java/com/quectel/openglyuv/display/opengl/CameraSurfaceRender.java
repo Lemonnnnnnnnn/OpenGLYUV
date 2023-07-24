@@ -11,6 +11,7 @@ import android.opengl.GLSurfaceView;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -21,7 +22,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
     private YUVProgram mYUVProgram;
 
-    private ByteBuffer mYUVBuffer;
+    private byte[] buffer;
 
     private final GLSurfaceView mGLSurfaceView;
 
@@ -55,8 +56,12 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
 
         int bufferSize = this.width * this.height * 3 / 2 ;
 
-        mYUVBuffer = ByteBuffer.allocateDirect(bufferSize)
-                .order(ByteOrder.nativeOrder());
+        buffer = new byte[bufferSize];
+
+        for (int i = this.width * this.height; i < bufferSize; i++) {
+            buffer[i] = (byte) 128;
+        }
+
         int[] textures = new int[1];
         glGenTextures(1, textures, 0);
         mSurfaceTexture = new SurfaceTexture(textures[0]);
@@ -70,9 +75,9 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
         glClearColor(1f, 1f, 1f, 1f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-//        synchronized (this) {
-            mYUVProgram.draw(mYUVBuffer.array());
-//        }
+        synchronized (buffer) {
+            mYUVProgram.draw(buffer);
+        }
 
         mSurfaceTexture.updateTexImage();
     }
@@ -80,10 +85,10 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
     @Override
     public void onImageReaderFrameCallBack(byte[] data) {
 
-//        synchronized (mYUVBuffer) {
-            mYUVBuffer.position(0);
-            mYUVBuffer.put(data);
-//        }
+        synchronized (buffer){
+            System.arraycopy(data,0,buffer,0,data.length);
+        }
+
 
         mGLSurfaceView.requestRender();
     }

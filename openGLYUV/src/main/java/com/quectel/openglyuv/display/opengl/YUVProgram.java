@@ -31,7 +31,8 @@ import android.content.res.Configuration;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
-import com.quectel.camera.openglyuv.R;
+
+import com.quectel.openglyuv.display.R;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -163,7 +164,6 @@ public class YUVProgram extends ShaderProgram {
 //        int orientation = mContext.getResources().getConfiguration().orientation;
 //        int degrees = orientation == Configuration.ORIENTATION_LANDSCAPE ? 0 : -90;
 //        Matrix.rotateM(mMatrix, 0, degrees, 0.0f, 0.0f, 1.0f);
-//
 //        GLES20.glUniformMatrix4fv(mMVPMatrixLocation, 1, false, mMatrix, 0);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

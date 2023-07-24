@@ -25,20 +25,31 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:weightSum="2">
+        android:weightSum="1">
         <FrameLayout
             android:id="@+id/container"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent">
+            <Button
+                android:visibility="visible"
+                android:id="@+id/btn_startRe"
+                android:layout_gravity="bottom|start"
+                android:text="Recorder"
+                android:onClick="startRe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
         </FrameLayout>
         <FrameLayout
+            android:visibility="gone"
             android:id="@+id/container1"
             android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="match_parent"/>
+            android:layout_weight="0"
+            android:layout_height="match_parent">
+        </FrameLayout>
     </LinearLayout>
     <LinearLayout
+        android:visibility="gone"
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -56,6 +67,7 @@
             android:layout_height="match_parent"/>
     </LinearLayout>
     <LinearLayout
+        android:visibility="gone"
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -71,14 +83,6 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent">
-            <Button
-                android:visibility="visible"
-                android:id="@+id/btn_startRe"
-                android:layout_gravity="bottom|end"
-                android:text="Recorder"
-                android:onClick="startRe"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
         </FrameLayout>
     </LinearLayout>
 </LinearLayout>

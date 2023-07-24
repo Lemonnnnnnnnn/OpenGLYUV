@@ -1,0 +1,122 @@
+diff --git a/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/CameraSurfaceRender.java b/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/CameraSurfaceRender.java
+index caedd9a..2ec6cfd 100644
+--- a/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/CameraSurfaceRender.java
++++ b/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/CameraSurfaceRender.java
+@@ -21,7 +21,7 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
+ 
+     private YUVProgram mYUVProgram;
+ 
+-    private ByteBuffer mYUVBuffer;
++    private ByteBuffer mYUVBuffer,mYBuffer,mUVBuffer;
+ 
+     private final GLSurfaceView mGLSurfaceView;
+ 
+@@ -55,9 +55,12 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
+ 
+         int bufferSize = this.width * this.height * 3 / 2 ;
+ 
+-        mYUVBuffer = ByteBuffer.allocateDirect(bufferSize)
++//        mYUVBuffer = ByteBuffer.allocateDirect(bufferSize)
++//                .order(ByteOrder.nativeOrder());
++        mYBuffer = ByteBuffer.allocateDirect(this.width * this.height)
++                .order(ByteOrder.nativeOrder());
++        mUVBuffer = ByteBuffer.allocateDirect(this.width * this.height / 2)
+                 .order(ByteOrder.nativeOrder());
+-
+         int[] textures = new int[1];
+         glGenTextures(1, textures, 0);
+         mSurfaceTexture = new SurfaceTexture(textures[0]);
+@@ -71,9 +74,10 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
+         glClearColor(1f, 1f, 1f, 1f);
+         glClear(GL_COLOR_BUFFER_BIT);
+ 
+-        if (mYUVBuffer == null) return;
+-        synchronized (mYUVBuffer) {
+-            mYUVProgram.draw(mYUVBuffer.array());
++        synchronized (this) {
++            mUVBuffer.position(0);
++            mYBuffer.position(0);
++            mYUVProgram.draw(mYBuffer,mUVBuffer);
+         }
+ 
+         mSurfaceTexture.updateTexImage();
+@@ -82,11 +86,13 @@ public class CameraSurfaceRender implements GLSurfaceView.Renderer,OpenGLData {
+     @Override
+     public void onImageReaderFrameCallBack(byte[] data) {
+ 
+-        if (mYUVBuffer == null) return;
+-        synchronized (mYUVBuffer) {
+-            mYUVBuffer.position(0);
+-            mYUVBuffer.put(data);
+-        }
++//        synchronized (mYUVBuffer) {
++            mYBuffer.position(0);
++            mYBuffer.put(data,0,width * height);
++
++            mUVBuffer.position(0);
++            mUVBuffer.put(data,width * height,width * height / 2);
++//        }
+ 
+         mGLSurfaceView.requestRender();
+     }
+diff --git a/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/YUVProgram.java b/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/YUVProgram.java
+index 60a8694..fe33fdc 100644
+--- a/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/YUVProgram.java
++++ b/openGLYUV/src/main/java/com/quectel/openglyuv/display/opengl/YUVProgram.java
+@@ -126,25 +126,33 @@ public class YUVProgram extends ShaderProgram {
+ 
+         mGLTextureBuffer.clear();
+         mGLTextureBuffer.put(TEXTURE_NO_ROTATION).position(0);
++
++        mGLCubeBuffer.position(0);
++        glVertexAttribPointer(mPositionLocation, 2, GL_FLOAT, false, 0, mGLCubeBuffer);
++        glEnableVertexAttribArray(mPositionLocation);
++
++        mGLTextureBuffer.position(0);
++        glVertexAttribPointer(mTextureCoordinatesLocation, 2, GL_FLOAT, false, 0, mGLTextureBuffer);
++        glEnableVertexAttribArray(mTextureCoordinatesLocation);
+     }
+ 
+-    public void draw(byte[] data) {
++    public void draw(ByteBuffer mYBuffer,ByteBuffer mUVBuffer) {
+         useProgram();
+ 
+-        mYBuffer.position(0);
+-        mYBuffer.put(data, 0, mWidth * mHeight);
++//        mYBuffer.position(0);
++//        mYBuffer.put(data, 0, mWidth * mHeight);
+ 
+-        mUVBuffer.position(0);
+-        mUVBuffer.put(data, mWidth * mHeight, mWidth * mHeight / 2);
++//        mUVBuffer.position(0);
++//        mUVBuffer.put(data, mWidth * mHeight, mWidth * mHeight / 2);
+ 
+-        mYBuffer.position(0);
++//        mYBuffer.position(0);
+         glActiveTexture(GL_TEXTURE0);
+         glBindTexture(GL_TEXTURE_2D, mYTestureId);
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mWidth, mHeight,
+                 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mYBuffer);
+         glUniform1i(mUniformYTextureLocation, 0);
+ 
+-        mUVBuffer.position(0);
++//        mUVBuffer.position(0);
+         glActiveTexture(GL_TEXTURE1);
+         glBindTexture(GL_TEXTURE_2D, mUVTextureId);
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, mWidth / 2, mHeight / 2,
+@@ -158,14 +166,6 @@ public class YUVProgram extends ShaderProgram {
+ 
+         GLES20.glUniformMatrix4fv(mMVPMatrixLocation, 1, false, mMatrix, 0);
+ 
+-        mGLCubeBuffer.position(0);
+-        glVertexAttribPointer(mPositionLocation, 2, GL_FLOAT, false, 0, mGLCubeBuffer);
+-        glEnableVertexAttribArray(mPositionLocation);
+-
+-        mGLTextureBuffer.position(0);
+-        glVertexAttribPointer(mTextureCoordinatesLocation, 2, GL_FLOAT, false, 0, mGLTextureBuffer);
+-        glEnableVertexAttribArray(mTextureCoordinatesLocation);
+-
+         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+     }
+ }
+\ No newline at end of file

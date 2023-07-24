@@ -399,7 +399,6 @@ public class Camera2VideoFragment extends Fragment
         }
         try {
             closePreviewSession();
-
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             List<Surface> list = new ArrayList<>();
@@ -408,24 +407,19 @@ public class Camera2VideoFragment extends Fragment
             Surface previewSurface = new Surface(texture);
             list.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
-            setupImageReader();
-            //获取ImageReader的Surface
-            Surface imageReaderSurface = mImageReader.getSurface();
-            list.add(imageReaderSurface);
-            //CaptureRequest添加imageReaderSurface，不加的话就会导致ImageReader的onImageAvailable()方法不会回调
-            mPreviewBuilder.addTarget(imageReaderSurface);
-            //创建CaptureSession时加上imageReaderSurface，如下，这样预览数据就会同时输出到previewSurface和imageReaderSurface了
             mCameraDevice.createCaptureSession(list, new CameraCaptureSession.StateCallback() {
-
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
                             Log.d(TAG, "set CONTROL_AE_TARGET_FPS_RANGE  camera ID = " + cameraId);
-                            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange[fpsRange.length - 1]);
                             mPreviewSession = session;
                             //设置反复捕获数据的请求，这样预览界面就会一直有数据显示
-                            updatePreview();
+                            try {
+                                mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+                                mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
+                            }
                         }
-
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
                             Activity activity = getActivity();
