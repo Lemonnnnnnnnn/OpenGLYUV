@@ -27,12 +27,12 @@ public class CameraActivity extends Activity {
 
     private static final int REQUEST_VIDEO_PERMISSIONS = 1;
     private Button btn;
-    private Camera1VideoFragment fragment;
-    private Camera1VideoFragment fragment1;
-    private Camera1VideoFragment fragment2;
-    private Camera1VideoFragment fragment3;
-    private Camera1VideoFragment fragment4;
-    private Camera1VideoFragment fragment5;
+    private BaseFragment fragment;
+    private BaseFragment fragment1;
+    private BaseFragment fragment2;
+    private BaseFragment fragment3;
+    private BaseFragment fragment4;
+    private BaseFragment fragment5;
 
     Handler handler = new Handler(){
         @Override
@@ -40,15 +40,15 @@ public class CameraActivity extends Activity {
             super.handleMessage(msg);
             switch (msg.what){
                 case 0:
-                    fragment = Camera1VideoFragment.newInstance("0");
+                    fragment = Camera2VideoFragment.newInstance("0");
                     replaceFragment(R.id.container,fragment);
                     break;
                 case 1:
-                    fragment1 = Camera1VideoFragment.newInstance("1");
+                    fragment1 = Camera2VideoFragment.newInstance("1");
                     replaceFragment(R.id.container1,fragment1);
                     break;
                 case 2:
-                    fragment2 = Camera1VideoFragment.newInstance("2");
+                    fragment2 = Camera2VideoFragment.newInstance("2");
                     replaceFragment(R.id.container2,fragment2);
                     break;
                 case 3:
@@ -106,6 +106,7 @@ public class CameraActivity extends Activity {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     private boolean hasPermissionsGranted(String[] permissions) {
         for (String permission : permissions) {
@@ -119,9 +120,9 @@ public class CameraActivity extends Activity {
 
     private void startCamera() {
         handler.sendEmptyMessageDelayed(0,0);
-//        handler.sendEmptyMessageDelayed(1,1000);
-//        handler.sendEmptyMessageDelayed(2,2000);
-//        handler.sendEmptyMessageDelayed(3,3000);
+//        handler.sendEmptyMessageDelayed(1,100);
+//        handler.sendEmptyMessageDelayed(2,200);
+//        handler.sendEmptyMessageDelayed(3,300);
 //        handler.sendEmptyMessageDelayed(4,4000);
 //        handler.sendEmptyMessageDelayed(5,5000);
     }

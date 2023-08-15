@@ -3,6 +3,7 @@ package com.quectel.openglyuv.display.utils;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.media.Image;
+import android.util.Log;
 import android.util.Size;
 
 import java.nio.ByteBuffer;

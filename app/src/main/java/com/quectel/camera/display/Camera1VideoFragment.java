@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class Camera1VideoFragment extends Fragment {
+public class Camera1VideoFragment extends BaseFragment {
 
     private final String TAG = Camera1VideoFragment.class.getSimpleName();
     // TODO: Rename parameter arguments, choose names that match

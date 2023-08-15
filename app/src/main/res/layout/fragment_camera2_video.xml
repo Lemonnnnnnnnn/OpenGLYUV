@@ -24,12 +24,19 @@
         android:layout_gravity="center"
         android:visibility="visible" />
 
+    <Spinner
+        android:visibility="gone"
+        android:id="@+id/spinner"
+        android:entries="@array/cameraID"
+        android:layout_margin="20dp"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content" />
 
     <android.opengl.GLSurfaceView
         android:id="@+id/glSurfaceview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible" />
+        android:visibility="gone" />
 
     <ImageView
         android:id="@+id/iv_preview"

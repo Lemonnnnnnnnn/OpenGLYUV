@@ -37,9 +37,12 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 
@@ -62,7 +65,7 @@ import java.util.Locale;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public class Camera2VideoFragment extends Fragment
+public class Camera2VideoFragment extends BaseFragment
         implements View.OnClickListener {
     private static final int SENSOR_ORIENTATION_DEFAULT_DEGREES = 90;
     private static final int SENSOR_ORIENTATION_INVERSE_DEGREES = 270;
@@ -86,6 +89,7 @@ public class Camera2VideoFragment extends Fragment
         INVERSE_ORIENTATIONS.append(Surface.ROTATION_180, 90);
         INVERSE_ORIENTATIONS.append(Surface.ROTATION_270, 0);
     }
+    private Spinner spinner;
 
     private AutoFitTextureView mTextureView;
     private CameraDevice mCameraDevice;
@@ -230,6 +234,10 @@ public class Camera2VideoFragment extends Fragment
     public void onViewCreated(final View view, Bundle savedInstanceState) {
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         ivPreview = view.findViewById(R.id.iv_preview);
+        ArrayAdapter<CharSequence> arrayAdapter = ArrayAdapter.createFromResource(getActivity(), R.array.cameraID, R.layout.spinner_item_layout);
+        arrayAdapter.setDropDownViewResource(R.layout.spinner_dropdown_style);
+        spinner = view.findViewById(R.id.spinner);
+        spinner.setAdapter(arrayAdapter);
 //        if (cameraId.equals("3")) {
 //            initDump();
 //            mPreviewSize = new Size(1280,720);
@@ -241,6 +249,27 @@ public class Camera2VideoFragment extends Fragment
 //        glSurfaceView.setRenderer(render);
 //        glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         recorder.setOnClickListener(this);
+        spinner.setSelection(Integer.parseInt(cameraId));
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (cameraId.equals((String) parent.getSelectedItem())){
+                    return;
+                }
+                closeCamera();
+                cameraId = (String) parent.getSelectedItem();
+                if (mTextureView.isAvailable()) {
+                    openCamera(mPreviewSize.getWidth(),mPreviewSize.getHeight());
+                } else {
+                    mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
     }
 
     @Override
@@ -399,6 +428,7 @@ public class Camera2VideoFragment extends Fragment
         }
         try {
             closePreviewSession();
+//            setupImageReader();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             List<Surface> list = new ArrayList<>();
@@ -407,6 +437,9 @@ public class Camera2VideoFragment extends Fragment
             Surface previewSurface = new Surface(texture);
             list.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
+//            Surface imageReaderSurface = mImageReader.getSurface();
+//            list.add(imageReaderSurface);
+//            mPreviewBuilder.addTarget(imageReaderSurface);
             mCameraDevice.createCaptureSession(list, new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
