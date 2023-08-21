@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "openglyuv"
 include ':app'
 include ':openGLYUV'
+include ':libyuv'
