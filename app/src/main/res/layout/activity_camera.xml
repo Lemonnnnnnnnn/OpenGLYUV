@@ -17,7 +17,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000"
+    android:background="#FFF"
     android:keepScreenOn="true"
     android:orientation="vertical">
     <LinearLayout
@@ -25,14 +25,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:weightSum="2">
+        android:weightSum="1">
         <FrameLayout
             android:id="@+id/container"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent">
             <Button
-                android:visibility="gone"
+                android:visibility="visible"
                 android:id="@+id/btn_startRe"
                 android:layout_gravity="bottom|start"
                 android:text="Recorder"
@@ -41,7 +41,7 @@
                 android:layout_height="wrap_content"/>
         </FrameLayout>
         <FrameLayout
-            android:visibility="visible"
+            android:visibility="gone"
             android:id="@+id/container1"
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -49,7 +49,7 @@
         </FrameLayout>
     </LinearLayout>
     <LinearLayout
-        android:visibility="visible"
+        android:visibility="gone"
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -61,6 +61,7 @@
             android:layout_weight="1"
             android:layout_height="match_parent"/>
         <FrameLayout
+            android:visibility="visible"
             android:id="@+id/container3"
             android:layout_width="0dp"
             android:layout_weight="1"

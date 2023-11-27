@@ -72,6 +72,7 @@ public class CameraController {
             switch (msg.what) {
                 case START_MEDIA_RECORDER_MSG:
                     //开启录像
+                    Log.d(TAG,"start Recorder");
                     mMediaRecorder.start();
 
                     break;
@@ -86,7 +87,7 @@ public class CameraController {
     //当前相机的ID
     private String mCameraId = "0";
     private CameraDevice mCameraDevice;
-    private Size mPreviewSize;
+    private Size mPreviewSize = new Size(1920,1080);
     private CaptureRequest.Builder mPreviewRequestBuilder;
     private CameraCaptureSession mCaptureSession;
     private CaptureRequest mPreviewRequest;
@@ -265,9 +266,9 @@ public class CameraController {
         //设置输出文件的路径
         mMediaRecorder.setOutputFile(mNextVideoAbsolutePath);
         //设置录制的视频编码比特率
-        mMediaRecorder.setVideoEncodingBitRate(10000000);
+        mMediaRecorder.setVideoEncodingBitRate(1024*500);
         //设置要捕获的视频帧速率
-        mMediaRecorder.setVideoFrameRate(25);
+        mMediaRecorder.setVideoFrameRate(30);
         //设置要捕获的视频的宽度和高度
         mMediaRecorder.setVideoSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         //设置视频编码器，用于录制
@@ -397,6 +398,7 @@ public class CameraController {
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
             // 打开相机时调用此方法。 在这里开始相机预览。
+            Log.e(TAG,"camera "+mCameraId+" opened ");
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
             //创建CameraPreviewSession
@@ -411,6 +413,7 @@ public class CameraController {
 
         @Override
         public void onDisconnected(@NonNull CameraDevice cameraDevice) {
+            Log.e(TAG,"camera "+mCameraId+" onDisconnected ");
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -751,9 +754,9 @@ public class CameraController {
                 Log.d(TAG, "widthPixels: " + widthPixels + "____heightPixels:" + heightPixels);
 
                 //尝试使用太大的预览大小可能会超出摄像头的带宽限制
-                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
-                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                        maxPreviewHeight, largest);
+//                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
+//                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
+//                        maxPreviewHeight, largest);
 
                 //我们将TextureView的宽高比与我们选择的预览大小相匹配。这样设置不会拉伸,但是不能全屏展示
                 if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {

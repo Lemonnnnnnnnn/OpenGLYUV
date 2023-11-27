@@ -22,6 +22,9 @@ import java.util.List;
 public class CameraUtil {
     private static final String TAG = "CameraUtil";
     private static boolean VERBOSE = false;
+    public static final int YUV420P = 0;
+    public static final int NV12 = 1;
+    public static final int NV21 = 2;
 
     //选择sizeMap中大于并且最接近width和height的size
     public static Size getOptimalSize(Size[] sizeMap, int width, int height) {
@@ -236,10 +239,12 @@ public class CameraUtil {
         int ySize = yBuffer.capacity();
         int uSize = uBuffer.capacity();
         int vSize = vBuffer.capacity();
+
 //        Log.i(TAG, "YUV_420_888toNV12 total size is " + (ySize + uSize + vSize) + " ySize " + ySize + " uSize " + uSize + " vSize " + vSize);
 
         int width = image.getWidth();
         int height = image.getHeight();
+//        Log.d(TAG,"image width = "+ width + " height = "+height);
         // 申请最终结果nv21数组
         nv12 = new byte[width * height * 3 / 2];
         // 先取y通道数据，直接拷贝即可
@@ -265,6 +270,197 @@ public class CameraUtil {
         nv12ByteBuffer.put(uBuffer);
         return nv12ByteBuffer;
     }
+
+    public static byte[] getI420FromImage(Image image) {
+        Rect crop = image.getCropRect();
+        int width = crop.width();
+        int height = crop.height();
+        byte[] outBuffer = new byte[width * height * 3 / 2 ];
+        Log.d(TAG, "getI420FromImage crop width: " + crop.width() + ", height: " + crop.height() + "buffer.length : " + outBuffer.length);
+
+        int yLength = width * height;
+        if (outBuffer == null || outBuffer.length != yLength * 3 / 2) {
+            Log.e(TAG, "outBuffer size error");
+            return null;
+        }
+        long time = System.currentTimeMillis();
+        // YUV_420_888
+        Image.Plane[] planes = image.getPlanes();
+        ByteBuffer yBuffer = planes[0].getBuffer();
+        ByteBuffer uBuffer = planes[1].getBuffer();
+        ByteBuffer vBuffer = planes[2].getBuffer();
+
+        int stride = planes[0].getRowStride();
+        Log.d(TAG, "stride y: " + stride);
+        int pixelStrideUV = planes[1].getPixelStride(); // pixelStride = 2
+
+        if (stride == width) {
+            yBuffer.get(outBuffer, 0, yLength);
+            int index = yLength;
+            for (int i = 0; i < yLength / 2; i += pixelStrideUV) {
+                outBuffer[index++] = uBuffer.get(i);
+            }
+            for (int i = 0; i < yLength / 2; i += pixelStrideUV) {
+                outBuffer[index++] = vBuffer.get(i);
+            }
+        } else {
+            for (int i = 0; i < height; i++) {
+                yBuffer.position(i * stride);
+                yBuffer.get(outBuffer, i * width, width);
+            }
+            int index = yLength;
+            for (int i = 0; i < height / 2; i++) {
+                int offset = i * stride;
+                for (int j = 0; j < width; j += pixelStrideUV) {
+                    outBuffer[index++] = uBuffer.get(offset + j);
+                }
+            }
+            for (int i = 0; i < height / 2; i++) {
+                int offset = i * stride;
+                for (int j = 0; j < width; j += pixelStrideUV) {
+                    outBuffer[index++] = vBuffer.get(offset + j);
+                }
+            }
+        }
+        Log.d(TAG, "getI420FromImage time: " + (System.currentTimeMillis() - time));
+        return  outBuffer;
+    }
+
+
+    public static byte[] getBytesFromImageAsType(Image image, int type) {
+        try {
+            long time = System.currentTimeMillis();
+            //获取源数据，如果是YUV格式的数据planes.length = 3
+            //plane[i]里面的实际数据可能存在byte[].length <= capacity (缓冲区总大小)
+            final Image.Plane[] planes = image.getPlanes();
+
+            //数据有效宽度，一般的，图片width <= rowStride，这也是导致byte[].length <= capacity的原因
+            // 所以我们只取width部分
+            int width = image.getWidth();
+            int height = image.getHeight();
+
+            //此处用来装填最终的YUV数据，需要1.5倍的图片大小，因为Y U V 比例为 4:1:1
+            byte[] yuvBytes = new byte[width * height * ImageFormat.getBitsPerPixel(ImageFormat.YV12) / 8];
+            //目标数组的装填到的位置
+            int dstIndex = 0;
+
+            //临时存储uv数据的
+            byte uBytes[] = new byte[width * height / 4];
+            byte vBytes[] = new byte[width * height / 4];
+            int uIndex = 0;
+            int vIndex = 0;
+
+            int pixelsStride, rowStride;
+            for (int i = 0; i < planes.length; i++) {
+                pixelsStride = planes[i].getPixelStride();
+                rowStride = planes[i].getRowStride();
+
+                ByteBuffer buffer = planes[i].getBuffer();
+
+                //如果pixelsStride==2，一般的Y的buffer长度=640*480，UV的长度=640*480/2-1
+                //源数据的索引，y的数据是byte中连续的，u的数据是v向左移以为生成的，两者都是偶数位为有效数据
+                byte[] bytes = new byte[buffer.capacity()];
+                buffer.get(bytes);
+
+                int srcIndex = 0;
+                if (i == 0) {
+                    //直接取出来所有Y的有效区域，也可以存储成一个临时的bytes，到下一步再copy
+                    for (int j = 0; j < height; j++) {
+                        System.arraycopy(bytes, srcIndex, yuvBytes, dstIndex, width);
+                        srcIndex += rowStride;
+                        dstIndex += width;
+                    }
+                } else if (i == 1) {
+                    //根据pixelsStride取相应的数据
+                    for (int j = 0; j < height / 2; j++) {
+                        for (int k = 0; k < width / 2; k++) {
+                            uBytes[uIndex++] = bytes[srcIndex];
+                            srcIndex += pixelsStride;
+                        }
+                        if (pixelsStride == 2) {
+                            srcIndex += rowStride - width;
+                        } else if (pixelsStride == 1) {
+                            srcIndex += rowStride - width / 2;
+                        }
+                    }
+                } else if (i == 2) {
+                    //根据pixelsStride取相应的数据
+                    for (int j = 0; j < height / 2; j++) {
+                        for (int k = 0; k < width / 2; k++) {
+                            vBytes[vIndex++] = bytes[srcIndex];
+                            srcIndex += pixelsStride;
+                        }
+                        if (pixelsStride == 2) {
+                            srcIndex += rowStride - width;
+                        } else if (pixelsStride == 1) {
+                            srcIndex += rowStride - width / 2;
+                        }
+                    }
+                }
+            }
+
+            image.close();
+
+            //根据要求的结果类型进行填充
+            switch (type) {
+                case YUV420P:
+                    System.arraycopy(uBytes, 0, yuvBytes, dstIndex, uBytes.length);
+                    System.arraycopy(vBytes, 0, yuvBytes, dstIndex + uBytes.length, vBytes.length);
+                    break;
+                case NV12:
+                    for (int i = 0; i < vBytes.length; i++) {
+                        yuvBytes[dstIndex++] = uBytes[i];
+                        yuvBytes[dstIndex++] = vBytes[i];
+                    }
+                    break;
+                case NV21:
+                    for (int i = 0; i < vBytes.length; i++) {
+                        yuvBytes[dstIndex++] = vBytes[i];
+                        yuvBytes[dstIndex++] = uBytes[i];
+                    }
+                    break;
+            }
+            Log.d(TAG, "getBytesFromImageAsType time: " + (System.currentTimeMillis() - time));
+            return yuvBytes;
+        } catch (final Exception e) {
+            if (image != null) {
+                image.close();
+            }
+        }
+        return null;
+    }
+
+    public static byte[] yuv420ToNv21(byte[] yuv420, int width, int height) {
+        byte[] nv21 = new byte[width * height * 3 / 2];
+        int frameSize = width * height;
+        int qFrameSize = frameSize / 4;
+        int yOffset = 0;
+        int uOffset = frameSize;
+        int vOffset = frameSize + qFrameSize;
+        int nv21Index = 0;
+        int yIndex, uIndex, vIndex;
+        byte y, u, v;
+        for (int i = 0; i < height; i++) {
+            yIndex = yOffset + i * width;
+            uIndex = uOffset + (i >> 1) * (width >> 1);
+            vIndex = vOffset + (i >> 1) * (width >> 1);
+            for (int j = 0; j < width; j++) {
+                y = yuv420[yIndex++];
+                u = yuv420[uIndex];
+                v = yuv420[vIndex];
+                nv21[nv21Index++] = y;
+                nv21[nv21Index++] = (byte) ((v & 0xff) << 24 >> 24);
+                nv21[nv21Index++] = (byte) ((u & 0xff) << 24 >> 24);
+                if (j % 2 == 1 && nv21Index % 2 == 1) {
+                    nv21Index++;
+                }
+                uIndex += j % 2;
+                vIndex += j % 2;
+            }
+        }
+        return nv21;
+    }
+
 
     public static byte[] getNV21FromImage(Image image) {
         long time1 = System.currentTimeMillis();

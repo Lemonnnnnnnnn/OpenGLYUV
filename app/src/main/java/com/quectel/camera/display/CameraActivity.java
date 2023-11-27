@@ -41,31 +41,36 @@ public class CameraActivity extends Activity {
             switch (msg.what){
                 case 0:
                     fragment = Camera2VideoFragment.newInstance("0");
+//                    fragment = CameraRawFragment.newInstance(0,1280,720);
                     replaceFragment(R.id.container,fragment);
                     break;
                 case 1:
                     fragment1 = Camera2VideoFragment.newInstance("1");
+//                    fragment1 = CameraRawFragment.newInstance(1,1280,720);
                     replaceFragment(R.id.container1,fragment1);
                     break;
                 case 2:
                     fragment2 = Camera2VideoFragment.newInstance("2");
+//                    fragment2 = CameraRawFragment.newInstance(2,1280,720);
                     replaceFragment(R.id.container2,fragment2);
                     break;
                 case 3:
-                    fragment3 = Camera1VideoFragment.newInstance("3");
+                    fragment3 = Camera2VideoFragment.newInstance("3");
+//                    fragment3 = CameraRawFragment.newInstance(3,1280,720);
                     replaceFragment(R.id.container3,fragment3);
                     break;
                 case 4:
-                    fragment4 = Camera1VideoFragment.newInstance("4");
+                    fragment4 = Camera2VideoFragment.newInstance("4");
                     replaceFragment(R.id.container4,fragment4);
                     break;
                 case 5:
-                    fragment5 = Camera1VideoFragment.newInstance("5");
+                    fragment5 = Camera2VideoFragment.newInstance("5");
                     replaceFragment(R.id.container5,fragment5);
                     break;
             }
         }
     };
+
     private void replaceFragment(int id, Fragment fragment){
         getFragmentManager().beginTransaction()
                 .replace(id, fragment)
@@ -120,17 +125,23 @@ public class CameraActivity extends Activity {
 
     private void startCamera() {
         handler.sendEmptyMessageDelayed(0,0);
-//        handler.sendEmptyMessageDelayed(1,100);
-//        handler.sendEmptyMessageDelayed(2,200);
-//        handler.sendEmptyMessageDelayed(3,300);
-//        handler.sendEmptyMessageDelayed(4,4000);
-//        handler.sendEmptyMessageDelayed(5,5000);
+//        handler.sendEmptyMessageDelayed(1,500);
+//        handler.sendEmptyMessageDelayed(2,1000);
+//        handler.sendEmptyMessageDelayed(3,1500);
+//        handler.sendEmptyMessageDelayed(4,2000);
+//        handler.sendEmptyMessageDelayed(5,2500);
     }
 
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+        super.onBackPressed();
     }
 
     public void startRe(View view){

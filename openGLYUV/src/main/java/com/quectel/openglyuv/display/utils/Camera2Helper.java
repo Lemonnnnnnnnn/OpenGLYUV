@@ -184,19 +184,20 @@ public class Camera2Helper {
 
                     if (image != null) {
                         // TODO: 2023-5-29 限制camera回调流为20fps
-//                        if (count == 0) {
-//                            startTime = System.currentTimeMillis();
-//                        }
-//                        count++;
-//                        if (count == 3) {
-//                            count = 0;
-//                            endTime = System.currentTimeMillis();
-//                        }
-//                        if (endTime != 0 && (endTime - startTime) <= 333) {
-//                            startTime = 0;
-//                            endTime = 0;
-//                            image.close();
-//                        } else {
+                        if (count == 0) {
+                            startTime = System.currentTimeMillis();
+                        }
+                        count++;
+                        if (count == 3) {
+                            count = 0;
+                            endTime = System.currentTimeMillis();
+                        }
+                        if (endTime != 0 && (endTime - startTime) <= 333) {
+                            startTime = 0;
+                            endTime = 0;
+                            image.close();
+                        } else {
+                            //取流操作
                             fps++;
                             //统计每秒钟打印次数获取帧率
                             if (image.getTimestamp() != -1 && image.getTimestamp() - lastFpsNanoseconds > 1000_000_000) { //打印帧率
@@ -208,7 +209,7 @@ public class Camera2Helper {
                             if (previewFrame != null) {
                                 previewFrame.previewFrameCallback(image);
                             }
-//                        }
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -246,13 +247,15 @@ public class Camera2Helper {
         }
     };
 
+    HandlerThread mCameraThread = null;
     public void initCamera() {
         //得到CameraManager
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
-
-            HandlerThread mCameraThread = new HandlerThread("CameraThread" + mCameraId);
-            mCameraThread.start();
+            if (mCameraThread == null){
+                mCameraThread = new HandlerThread("CameraThread" + mCameraId);
+                mCameraThread.start();
+            }
             mMainHandler = new android.os.Handler(mCameraThread.getLooper());
             if (mCameraId != null) {
                 //打开摄像头

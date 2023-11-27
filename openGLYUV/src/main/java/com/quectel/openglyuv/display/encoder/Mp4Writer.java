@@ -34,7 +34,7 @@ public class Mp4Writer {
 
 //    private int colorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible;
     private int colorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar;
-    private int bitRate = 5*1024*1024;
+    private int bitRate = 2*1024*1024;
 
     public Mp4Writer(Context context, final int width, final int height, int fps, final String saveMp4Path) {
         isSub = saveMp4Path.contains("sub");
@@ -86,12 +86,24 @@ public class Mp4Writer {
         encodeMediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
         encodeMediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
         encodeMediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, encodeFrameRate);
-        encodeMediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
+        encodeMediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+//        encodeMediaFormat.setInteger(MediaFormat.KEY_PROFILE,MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline);
+//        encodeMediaFormat.setInteger(MediaFormat.KEY_LEVEL,MediaCodecInfo.CodecProfileLevel.AVCLevel4);
         encodeMediaFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR);
+//        encodeMediaFormat.setInteger("qti-ext-enc-ipbqprange-minIQP",25);
+//        encodeMediaFormat.setInteger("qti-ext-enc-ipbqprange-maxIQP",30);
+//        encodeMediaFormat.setInteger("qti-ext-enc-ipbqprange-minPQP",25);
+//        encodeMediaFormat.setInteger("qti-ext-enc-ipbqprange-maxPQP",30);
+//        encodeMediaFormat.setInteger("qti-ext-enc-ipbqprange-minBQP",25);
+//        encodeMediaFormat.setInteger("qti-ext-enc-ipbqprange-maxBQP",30);
+//        encodeMediaFormat.setInteger("vendor.qti-ext-enc-frame-qp",25);
+//        encodeMediaFormat.setInteger("qti-ext-enc-quantization.Iqp",35);
+//        encodeMediaFormat.setInteger("qti-ext-enc-quantization.Pqp",40);
+//        encodeMediaFormat.setInteger("qti-ext-enc-quantization.Bqp",40);
         encodeCodec = MediaCodec.createByCodecName(codecName);
         encodeCodec.configure(encodeMediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         encodeCodec.start();
-        mMediaMuxer = new MediaMuxer(savePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        mMediaMuxer = new MediaMuxer(savePath, 5);
     }
 
     private void stopAndRelease() {

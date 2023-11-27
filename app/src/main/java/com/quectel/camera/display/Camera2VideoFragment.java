@@ -51,6 +51,7 @@ import com.quectel.openglyuv.display.encoder.Mp4Writer;
 import com.quectel.openglyuv.display.opengl.CameraSurfaceRender;
 import com.quectel.openglyuv.display.utils.Camera2Helper;
 import com.quectel.openglyuv.display.utils.CameraUtil;
+import com.quectel.openglyuv.display.utils.LibYUVUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -119,7 +120,7 @@ public class Camera2VideoFragment extends BaseFragment
 
     };
 
-    private Size mPreviewSize = new Size(1920, 1080);
+    private Size mPreviewSize = new Size(1280, 720);
     private HandlerThread mBackgroundThread;
     private Handler mBackgroundHandler;
 
@@ -239,9 +240,10 @@ public class Camera2VideoFragment extends BaseFragment
         spinner = view.findViewById(R.id.spinner);
         spinner.setAdapter(arrayAdapter);
 //        if (cameraId.equals("3")) {
-//            initDump();
+            initDump();
 //            mPreviewSize = new Size(1280,720);
 //        }
+//        LibYUVUtils.init(mPreviewSize.getWidth(),mPreviewSize.getHeight(),mPreviewSize.getWidth(),mPreviewSize.getHeight());
         recorder = view.findViewById(R.id.video);
 //        glSurfaceView = view.findViewById(R.id.glSurfaceview);
 //        render = new CameraSurfaceRender(glSurfaceView, mPreviewSize.getWidth(), mPreviewSize.getHeight());
@@ -386,6 +388,8 @@ public class Camera2VideoFragment extends BaseFragment
             if (map == null) {
                 throw new RuntimeException("Cannot get available preview/video sizes");
             }
+            Size[] size = map.getOutputSizes(MediaRecorder.class);
+            Log.d(TAG,"camera support size = "+Arrays.toString(size));
             fpsRange = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
             Log.d(TAG, "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES == " + Arrays.toString(fpsRange));
             Log.d(TAG, "mPreviewSize width=" + mPreviewSize.getWidth() + ";height=" + mPreviewSize.getHeight());
@@ -395,6 +399,7 @@ public class Camera2VideoFragment extends BaseFragment
             } else {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
             }
+//            initDump();
             manager.openCamera(cameraId, mStateCallback, mBackgroundHandler);
         } catch (Exception e) {
             e.printStackTrace();
@@ -428,7 +433,7 @@ public class Camera2VideoFragment extends BaseFragment
         }
         try {
             closePreviewSession();
-//            setupImageReader();
+            setupImageReader();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             List<Surface> list = new ArrayList<>();
@@ -437,9 +442,9 @@ public class Camera2VideoFragment extends BaseFragment
             Surface previewSurface = new Surface(texture);
             list.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
-//            Surface imageReaderSurface = mImageReader.getSurface();
-//            list.add(imageReaderSurface);
-//            mPreviewBuilder.addTarget(imageReaderSurface);
+            Surface imageReaderSurface = mImageReader.getSurface();
+            list.add(imageReaderSurface);
+            mPreviewBuilder.addTarget(imageReaderSurface);
             mCameraDevice.createCaptureSession(list, new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
@@ -447,6 +452,7 @@ public class Camera2VideoFragment extends BaseFragment
                             mPreviewSession = session;
                             //设置反复捕获数据的请求，这样预览界面就会一直有数据显示
                             try {
+                                mPreviewBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON);
                                 mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
                                 mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);
                             } catch (CameraAccessException e) {
@@ -480,25 +486,31 @@ public class Camera2VideoFragment extends BaseFragment
             private int fps, pCBCount, subfps = 0;
             private long lastFpsNanoseconds, sublastFpsNanoseconds, startTimeNs, endTimeNs = 0;
 
+            int sum=0;
             @Override
             public void onImageAvailable(ImageReader reader) {
                 Image image = reader.acquireLatestImage();
                 //我们可以将这帧数据转成字节数组，类似于Camera1的PreviewCallback回调的预览帧数据
                 if (image != null) {
-                    bytes = CameraUtil.YUV_420_888toNV12(image);
+                    bytes = CameraUtil.getI420FromImage(image);
                     byte [] glData = new byte[bytes.length];
-                    System.arraycopy(bytes,0,glData,0,bytes.length);
+                    LibYUVUtils.yuvI420ToNV21(bytes,glData,mPreviewSize.getWidth(),mPreviewSize.getHeight());
+//                    System.arraycopy(bytes,0,glData,0,bytes.length);
                     if (mediaRecorderThread != null) {
 //                        mediaRecorderThread.add(bytes);
                     }
                     if (mp4Writer != null){
-                        mp4Writer.write(bytes);
+                        mp4Writer.write(glData);
                     }
 
                     if (render != null ) {
                         render.onImageReaderFrameCallBack(glData);
                     }
-//                    dumpYUV(bytes);
+                    if (sum <= 20){
+                        sum ++;
+                        dumpYUV(glData);
+                    }
+
 //                    YuvImage image2 = new YuvImage(bytes,ImageFormat.NV21,mPreviewSize.getWidth(),mPreviewSize.getHeight(),null);
 //                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
 //                    image2.compressToJpeg(new Rect(0,0,mPreviewSize.getWidth(),mPreviewSize.getHeight()),80,stream);
@@ -550,10 +562,12 @@ public class Camera2VideoFragment extends BaseFragment
 
     private String getVideoPath(Context context, boolean isSub) {
         final File dir = context.getExternalFilesDir(null);
+//        final File dir = new File("/storage/8A17-14FA/DCIM/");
+        if (!dir.exists()) dir.mkdirs();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
         Date date = new Date(System.currentTimeMillis());
-//        String formatString = simpleDateFormat.format(date);
-        String formatString = "test";
+        String formatString = simpleDateFormat.format(date);
+//        String formatString = "test";
         return (dir == null ? "" : (dir.getAbsolutePath() + "/"))
                 + "Camera_" + cameraId.replace("/", "")
                 + "_" + (isSub ? "sub" : "main") + "_"
@@ -570,7 +584,7 @@ public class Camera2VideoFragment extends BaseFragment
     private void initDump() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
         String str = sdf.format(new Date());
-        mFile = new File(getActivity().getExternalFilesDir(null) + "/" + str + ".yuv");
+        mFile = new File(getActivity().getExternalFilesDir(null) + "/cameraID_"+cameraId+"_" + str + ".yuv");
     }
 
     private void dumpYUV(byte[] data) {
